@@ -7,11 +7,20 @@
 
 namespace nix {
 
-class Settings;
+struct SQLiteSettings;
+struct NarInfoDiskCacheSettings;
 
-class NarInfoDiskCache
+struct NarInfoDiskCache
 {
-public:
+    using Settings = NarInfoDiskCacheSettings;
+
+    const Settings & settings;
+
+    NarInfoDiskCache(const Settings & settings)
+        : settings(settings)
+    {
+    }
+
     typedef enum { oValid, oInvalid, oUnknown } Outcome;
 
     virtual ~NarInfoDiskCache() {}
@@ -37,17 +46,14 @@ public:
     virtual void upsertAbsentRealisation(const std::string & uri, const DrvOutput & id) = 0;
     virtual std::pair<Outcome, std::shared_ptr<Realisation>>
     lookupRealisation(const std::string & uri, const DrvOutput & id) = 0;
+
+    /**
+     * Return a singleton cache object that can be used concurrently by
+     * multiple threads.
+     */
+    static ref<NarInfoDiskCache> get(const Settings & settings, SQLiteSettings);
+
+    static ref<NarInfoDiskCache> getTest(const Settings & settings, SQLiteSettings, Path dbPath);
 };
-
-/**
- * Return a singleton cache object that can be used concurrently by
- * multiple threads.
- *
- * @todo should use refined reference just with fields relevant to this,
- * not the whole global settings.
- */
-ref<NarInfoDiskCache> getNarInfoDiskCache(const Settings & settings);
-
-ref<NarInfoDiskCache> getTestNarInfoDiskCache(const Settings & settings, Path dbPath);
 
 } // namespace nix
